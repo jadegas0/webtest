@@ -148,9 +148,222 @@ export function genDenseSphere(count: number): Float32Array {
   return genSphere(count, 1.5, 0.30)
 }
 
+// ─── Feature icon shapes ─────────────────────────────────────────────
+// Each matches one of the 6 capability cards in Features.tsx.
+
+// Feature 0 — Smart Ordering → Shopping Cart
+export function genCartIcon(count: number): Float32Array {
+  const pos = new Float32Array(count * 3)
+  let idx = 0
+  const jitter = () => (Math.random() - 0.5) * 0.06
+
+  const fill = (x: number, y: number, z: number) => {
+    if (idx >= count) return
+    pos[idx * 3]     = x + jitter()
+    pos[idx * 3 + 1] = y + jitter()
+    pos[idx * 3 + 2] = z + jitter()
+    idx++
+  }
+
+  const buckets = [
+    Math.floor(count * 0.30), // basket body
+    Math.floor(count * 0.18), // left wall
+    Math.floor(count * 0.18), // right wall
+    Math.floor(count * 0.14), // handle
+    Math.floor(count * 0.10), // wheel L
+    count,                    // wheel R (remainder)
+  ]
+
+  // Basket bottom
+  for (let i = 0; i < buckets[0]; i++) fill((Math.random() - 0.5) * 3.0, -1.2, (Math.random() - 0.5) * 0.4)
+  // Left wall
+  for (let i = 0; i < buckets[1]; i++) fill(-1.5, -1.2 + Math.random() * 1.5, (Math.random() - 0.5) * 0.3)
+  // Right wall
+  for (let i = 0; i < buckets[2]; i++) fill( 1.5, -1.2 + Math.random() * 1.5, (Math.random() - 0.5) * 0.3)
+  // Handle arc
+  for (let i = 0; i < buckets[3]; i++) {
+    const t = (i / buckets[3]) * Math.PI
+    fill(Math.cos(t) * 1.5, Math.sin(t) * 1.0 + 0.5, (Math.random() - 0.5) * 0.2)
+  }
+  // Wheel Left
+  for (let i = 0; i < buckets[4]; i++) {
+    const t = Math.random() * Math.PI * 2
+    fill(-0.8 + Math.cos(t) * 0.35, -1.8 + Math.sin(t) * 0.35, (Math.random() - 0.5) * 0.1)
+  }
+  // Wheel Right (fill remainder)
+  while (idx < count) {
+    const t = Math.random() * Math.PI * 2
+    fill(0.8 + Math.cos(t) * 0.35, -1.8 + Math.sin(t) * 0.35, (Math.random() - 0.5) * 0.1)
+  }
+  return pos
+}
+
+// Feature 1 — Travel & Dining → Airplane (top-down)
+export function genAirplaneIcon(count: number): Float32Array {
+  const pos = new Float32Array(count * 3)
+  let idx = 0
+  const jitter = () => (Math.random() - 0.5) * 0.07
+
+  const fill = (x: number, y: number, z: number) => {
+    if (idx >= count) return
+    pos[idx * 3]     = x + jitter()
+    pos[idx * 3 + 1] = y + jitter()
+    pos[idx * 3 + 2] = z + jitter()
+    idx++
+  }
+
+  const fuselage = Math.floor(count * 0.35)
+  const wingL    = Math.floor(count * 0.22)
+  const wingR    = Math.floor(count * 0.22)
+  const tailL    = Math.floor(count * 0.10)
+  const tailR    = Math.floor(count * 0.10)
+
+  // Fuselage (vertical line)
+  for (let i = 0; i < fuselage; i++) fill((Math.random() - 0.5) * 0.3, (i / fuselage - 0.5) * 5.0, (Math.random() - 0.5) * 0.2)
+  // Wings
+  for (let i = 0; i < wingL; i++) {
+    const t = i / wingL
+    fill(-t * 2.8, t * 0.6 - 0.2, (Math.random() - 0.5) * 0.15)
+  }
+  for (let i = 0; i < wingR; i++) {
+    const t = i / wingR
+    fill( t * 2.8, t * 0.6 - 0.2, (Math.random() - 0.5) * 0.15)
+  }
+  // Tail fins
+  for (let i = 0; i < tailL; i++) fill(-i / tailL * 1.2, -2.0 + i / tailL * 0.5, (Math.random() - 0.5) * 0.1)
+  while (idx < count)             fill( (idx % 10) / 10 * 1.2, -2.0 + (idx % 10) / 10 * 0.5, (Math.random() - 0.5) * 0.1)
+  return pos
+}
+
+// Feature 2 — Deep Research → Magnifying Glass
+export function genMagnifyingGlassIcon(count: number): Float32Array {
+  const pos = new Float32Array(count * 3)
+  let idx = 0
+  const jitter = () => (Math.random() - 0.5) * 0.06
+
+  const circleCount  = Math.floor(count * 0.72)
+  const handleCount  = count - circleCount
+  const R = 1.8
+
+  for (let i = 0; i < circleCount; i++) {
+    const t   = (i / circleCount) * Math.PI * 2
+    const r   = R + (Math.random() - 0.5) * 0.18
+    pos[idx * 3]     = Math.cos(t) * r + jitter()
+    pos[idx * 3 + 1] = Math.sin(t) * r + 0.5 + jitter()
+    pos[idx * 3 + 2] = jitter()
+    idx++
+  }
+  for (let i = 0; i < handleCount; i++) {
+    const t = i / handleCount
+    pos[idx * 3]     = -(R * 0.707) - t * 1.2 + jitter()
+    pos[idx * 3 + 1] = -(R * 0.707) + 0.5 - t * 1.2 + jitter()
+    pos[idx * 3 + 2] = jitter()
+    idx++
+  }
+  return pos
+}
+
+// Feature 3 — Smart Home → House silhouette
+export function genHouseIcon(count: number): Float32Array {
+  const pos = new Float32Array(count * 3)
+  let idx = 0
+  const jitter = () => (Math.random() - 0.5) * 0.07
+
+  const fill = (x: number, y: number, z: number) => {
+    if (idx >= count) return
+    pos[idx * 3]     = x + jitter()
+    pos[idx * 3 + 1] = y + jitter()
+    pos[idx * 3 + 2] = z + jitter()
+    idx++
+  }
+
+  const roofN  = Math.floor(count * 0.28)
+  const wallN  = Math.floor(count * 0.32)
+  const floorN = Math.floor(count * 0.16)
+  const doorN  = Math.floor(count * 0.12)
+
+  // Roof (two slanted lines forming triangle)
+  for (let i = 0; i < roofN; i++) {
+    const t = i / roofN
+    if (t < 0.5) fill(-2.2 + t * 2 * 2.2, 0.6 + t * 2 * 1.8, (Math.random() - 0.5) * 0.2)
+    else         fill((t * 2 - 1) * 2.2, 2.4 - (t * 2 - 1) * 1.8, (Math.random() - 0.5) * 0.2)
+  }
+  // Left & right walls
+  for (let i = 0; i < wallN / 2; i++) fill(-2.2, -1.6 + (i / (wallN / 2)) * 2.2, (Math.random() - 0.5) * 0.2)
+  for (let i = 0; i < wallN / 2; i++) fill( 2.2, -1.6 + (i / (wallN / 2)) * 2.2, (Math.random() - 0.5) * 0.2)
+  // Floor
+  for (let i = 0; i < floorN; i++) fill(-2.2 + (i / floorN) * 4.4, -1.6, (Math.random() - 0.5) * 0.2)
+  // Door arch
+  for (let i = 0; i < doorN; i++) {
+    const t = (i / doorN) * Math.PI
+    fill(Math.cos(t) * 0.5, Math.sin(t) * 0.7 - 1.1, (Math.random() - 0.5) * 0.1)
+  }
+  // Fill remainder as scattered house interior
+  while (idx < count) fill((Math.random() - 0.5) * 3.6, -1.6 + Math.random() * 2.8, (Math.random() - 0.5) * 0.3)
+  return pos
+}
+
+// Feature 4 — Finance & Admin → Bar Chart
+export function genBarChartIcon(count: number): Float32Array {
+  const pos = new Float32Array(count * 3)
+  let idx = 0
+  const jitter = () => (Math.random() - 0.5) * 0.06
+
+  const bars = [
+    { x: -1.8, h: 1.2 },
+    { x: -0.6, h: 2.2 },
+    { x:  0.6, h: 1.7 },
+    { x:  1.8, h: 3.0 },
+  ]
+  const perBar = Math.floor(count / bars.length)
+
+  for (let b = 0; b < bars.length; b++) {
+    const { x, h } = bars[b]
+    const n = b < bars.length - 1 ? perBar : count - idx
+    for (let i = 0; i < n && idx < count; i++, idx++) {
+      pos[idx * 3]     = x + (Math.random() - 0.5) * 0.9 + jitter()
+      pos[idx * 3 + 1] = -1.5 + Math.random() * h + jitter()
+      pos[idx * 3 + 2] = jitter()
+    }
+  }
+  return pos
+}
+
+// Feature 5 — Health & Wellness → Heart
+export function genHeartIcon(count: number): Float32Array {
+  const pos = new Float32Array(count * 3)
+
+  for (let i = 0; i < count; i++) {
+    const t     = (i / count) * Math.PI * 2
+    const noise = (Math.random() - 0.5) * 0.14
+
+    // Parametric heart: x = 16sin³t, y = 13cost − 5cos2t − 2cos3t − cos4t
+    const hx = 16 * Math.pow(Math.sin(t), 3)
+    const hy = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)
+
+    pos[i * 3]     = hx * 0.125 + (Math.random() - 0.5) * noise
+    pos[i * 3 + 1] = hy * 0.125 + (Math.random() - 0.5) * noise
+    pos[i * 3 + 2] = (Math.random() - 0.5) * 0.3
+  }
+  return pos
+}
+
 // ─── Pre-computed shape table ────────────────────────────────────────
 // Generated once at module load — shapes are reused across renders.
 export type ShapeKey = 'sphere' | 'rings' | 'clusters' | 'helix' | 'grid' | 'denseSphere'
+
+
+// Feature icon shapes — indexed 0–5 matching FEATURES array in Features.tsx
+// 0 Smart Ordering, 1 Travel & Dining, 2 Deep Research,
+// 3 Smart Home, 4 Finance & Admin, 5 Health & Wellness
+export const FEATURE_SHAPES: Float32Array[] = [
+  genCartIcon(PARTICLE_COUNT),
+  genAirplaneIcon(PARTICLE_COUNT),
+  genMagnifyingGlassIcon(PARTICLE_COUNT),
+  genHouseIcon(PARTICLE_COUNT),
+  genBarChartIcon(PARTICLE_COUNT),
+  genHeartIcon(PARTICLE_COUNT),
+]
 
 export const SHAPES: Record<ShapeKey, Float32Array> = {
   sphere:      genSphere(PARTICLE_COUNT),

@@ -50,7 +50,7 @@ export default function Page() {
   const [loaded, setLoaded] = useState(false)
 
   // Mutable ref: GSAP animates .section, ParticleField reads it every frame
-  const scrollState = useRef<{ section: number }>({ section: 0 })
+  const scrollState = useRef<{ section: number; featureIdx: number }>({ section: 0, featureIdx: 0 })
 
   // Lenis smooth scroll (wired to GSAP ticker in the hook)
   useLenis()
@@ -122,7 +122,7 @@ export default function Page() {
       <main id="main-content">
         <Hero />
         <Brand />
-        <Features />
+        <Features onFeatureChange={(idx) => { scrollState.current.featureIdx = idx }} />
         <Showcase />
         <Stats />
         <CTA />

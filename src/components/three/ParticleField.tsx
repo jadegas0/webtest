@@ -3,7 +3,7 @@
 import { useRef, useMemo, useEffect } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { PARTICLE_COUNT, SHAPES, SECTION_CONFIG } from './shapes'
+import { PARTICLE_COUNT, SHAPES, SECTION_CONFIG, FEATURE_SHAPES } from './shapes'
 
 // ─── Vertex shader ────────────────────────────────────────────────────
 // Positions come from CPU-side lerped buffer (updated via needsUpdate).
@@ -113,8 +113,8 @@ function buildAttributes(count: number) {
 
 // ─── Component props ──────────────────────────────────────────────────
 interface ParticleFieldProps {
-  /** Mutable ref holding { section: number } — updated by GSAP in page.tsx */
-  scrollState: React.MutableRefObject<{ section: number }>
+  /** Mutable ref holding current scroll state — updated by GSAP in page.tsx */
+  scrollState: React.MutableRefObject<{ section: number; featureIdx: number }>
 }
 
 // ─── Main component ───────────────────────────────────────────────────
@@ -125,9 +125,10 @@ export default function ParticleField({ scrollState }: ParticleFieldProps) {
   const { gl }    = useThree()
 
   // ── Lerp state (mutable, not React state — updated every frame)
-  const lerpPos    = useRef(new Float32Array(SHAPES.sphere))   // current positions
-  const targetPos  = useRef(new Float32Array(SHAPES.sphere))   // destination
-  const currentSec = useRef(-1)                                // last section index
+  const lerpPos       = useRef(new Float32Array(SHAPES.sphere))   // current positions
+  const targetPos     = useRef(new Float32Array(SHAPES.sphere))   // destination
+  const currentSec    = useRef(-1)                                // last section index
+  const currentFeatIdx = useRef(-1)                               // last feature idx
 
   // Target world position of the whole group
   const groupTarget = useRef(new THREE.Vector3(2.6, 0, 0))
@@ -185,15 +186,29 @@ export default function ParticleField({ scrollState }: ParticleFieldProps) {
     // — Detect section change
     const sec = Math.round(scrollState.current.section)
     const clampedSec = Math.min(Math.max(sec, 0), SECTION_CONFIG.length - 1)
+    const featIdx = Math.min(Math.max(scrollState.current.featureIdx ?? 0, 0), FEATURE_SHAPES.length - 1)
+
+    const inFeatures = clampedSec === 2
 
     if (clampedSec !== currentSec.current) {
       currentSec.current = clampedSec
-      const cfg = SECTION_CONFIG[clampedSec]
-      // Swap target position buffer
-      targetPos.current = new Float32Array(SHAPES[cfg.shape])
-      // Update world-position target
-      groupTarget.current.set(...cfg.position)
-      scaleTarget.current = cfg.scale
+      if (!inFeatures) {
+        // Not in features section — use section shape
+        const cfg = SECTION_CONFIG[clampedSec]
+        targetPos.current = new Float32Array(SHAPES[cfg.shape])
+        groupTarget.current.set(...cfg.position)
+        scaleTarget.current = cfg.scale
+        currentFeatIdx.current = -1 // reset so re-entering features re-triggers
+      }
+    }
+
+    // — While in features section, swap shape on featureIdx change
+    if (inFeatures && featIdx !== currentFeatIdx.current) {
+      currentFeatIdx.current = featIdx
+      targetPos.current = new Float32Array(FEATURE_SHAPES[featIdx])
+      // Position: icon floats center-right, slightly elevated
+      groupTarget.current.set(1.8, 0.2, 0)
+      scaleTarget.current = 0.92
     }
 
     // — Lerp particle positions (CPU, ~15K floats — fast on typed arrays)

@@ -5,30 +5,32 @@ import { Canvas } from '@react-three/fiber'
 import ParticleField from './ParticleField'
 
 interface ParticleCanvasProps {
-  /**
-   * Mutable ref shared with page.tsx.
-   * GSAP animates scrollState.current.section (0–5) as the user scrolls.
-   * ParticleField reads this ref every frame to decide which shape to morph toward.
-   */
-  scrollState: React.MutableRefObject<{ section: number }>
+  scrollState: React.MutableRefObject<{ section: number; featureIdx: number }>
 }
 
 /**
- * Full-viewport fixed canvas that hosts the A.U.R.A particle field.
+ * Full-viewport fixed canvas for the A.U.R.A particle field.
  *
- * Design decisions:
- *   — position: fixed so it spans the full viewport regardless of scroll
- *   — pointer-events: none so all clicks pass through to page content
- *   — z-index: 40 (above sections, below navigation at z-50)
- *   — Alpha canvas — black background comes from the page, not the canvas
- *   — DPR capped at 1.5 for performance on high-DPI screens
- *   — antialias: false — point sprites don't benefit from MSAA
+ * z-index & blending strategy:
+ *   The canvas sits at z-index 10 (above page backgrounds, below nav at z-50).
+ *   `mix-blend-mode: screen` composites particles onto page content additively:
+ *     – Transparent canvas pixels → no change to underlying content (alpha = 0)
+ *     – Bright particles on dark bg → glow appears (screen = additive on near-black)
+ *     – Particles over white text → text stays white (screen of any value with white = white)
+ *   Result: particles never obscure text — they only ADD light to dark areas.
+ *
+ *   `pointer-events: none` ensures all clicks / taps pass through to page content.
  */
 export default function ParticleCanvas({ scrollState }: ParticleCanvasProps) {
   return (
     <div
       className="fixed inset-0 pointer-events-none"
-      style={{ zIndex: 40 }}
+      style={{
+        zIndex: 10,
+        mixBlendMode: 'screen',
+        // Isolation prevents parent stacking context from breaking blend mode
+        isolation: 'auto',
+      }}
       aria-hidden="true"
     >
       <Canvas
@@ -36,6 +38,7 @@ export default function ParticleCanvas({ scrollState }: ParticleCanvasProps) {
         gl={{
           antialias: false,
           alpha: true,
+          premultipliedAlpha: false, // required for correct screen-blend compositing
           powerPreference: 'high-performance',
           stencil: false,
           depth: false,
@@ -44,9 +47,7 @@ export default function ParticleCanvas({ scrollState }: ParticleCanvasProps) {
         style={{ background: 'transparent' }}
         frameloop="always"
       >
-        {/* Very minimal lighting — shader handles all glow */}
         <ambientLight intensity={0.0} />
-
         <Suspense fallback={null}>
           <ParticleField scrollState={scrollState} />
         </Suspense>
