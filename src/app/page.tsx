@@ -1,7 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import dynamic from 'next/dynamic'
+import gsap from 'gsap'
+import ScrollTrigger from 'gsap/ScrollTrigger'
 
 // Layout
 import Navigation   from '@/components/layout/Navigation'
@@ -19,47 +21,83 @@ import CTA          from '@/components/sections/CTA'
 import GrainOverlay from '@/components/ui/GrainOverlay'
 import SoundToggle  from '@/components/ui/SoundToggle'
 
-// Dynamic — cursor uses browser APIs, skip SSR
-const LoadingScreen = dynamic(() => import('@/components/ui/LoadingScreen'), { ssr: false })
-const Cursor        = dynamic(() => import('@/components/ui/Cursor'),        { ssr: false })
+// Dynamic — Three.js / browser APIs only
+const LoadingScreen  = dynamic(() => import('@/components/ui/LoadingScreen'),              { ssr: false })
+const Cursor         = dynamic(() => import('@/components/ui/Cursor'),                     { ssr: false })
+const ParticleCanvas = dynamic(() => import('@/components/three/ParticleCanvas'),          { ssr: false })
 
-// Lenis smooth scroll — client only
+// Lenis smooth scroll
 import { useLenis } from '@/hooks/useLenis'
 
 /**
- * Main page component.
- * Orchestrates:
- *   1. Loading screen (shown until loaded)
- *   2. Smooth scroll initialisation (Lenis + GSAP ScrollTrigger)
- *   3. Grain overlay (atmospheric texture)
- *   4. Custom cursor
- *   5. Navigation, sections, footer
+ * Root page.
+ *
+ * Scroll → section mapping:
+ *   Each section has a ScrollTrigger waypoint. When a section enters the
+ *   viewport past 55%, GSAP tweens scrollState.current.section to that
+ *   section's index (0–5). ParticleField reads this ref every frame and
+ *   morphs the particle cloud toward the matching shape.
+ *
+ * Section → shape mapping (defined in shapes.ts):
+ *   0 Hero      → sphere        (right side of screen)
+ *   1 Brand     → rings         (centre)
+ *   2 Features  → clusters      (right side)
+ *   3 Showcase  → helix         (left side)
+ *   4 Stats     → grid          (upper right)
+ *   5 CTA       → denseSphere   (upper centre)
  */
 export default function Page() {
   const [loaded, setLoaded] = useState(false)
 
-  // Lenis smooth scroll — wired to GSAP ticker
+  // Mutable ref: GSAP animates .section, ParticleField reads it every frame
+  const scrollState = useRef<{ section: number }>({ section: 0 })
+
+  // Lenis smooth scroll (wired to GSAP ticker in the hook)
   useLenis()
 
-  // Lock body scroll during loading
+  // Lock body scroll during loading screen
   useEffect(() => {
-    if (!loaded) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
+    document.body.style.overflow = loaded ? '' : 'hidden'
     return () => { document.body.style.overflow = '' }
   }, [loaded])
 
+  // Wire scroll → section index → particle morph
+  useEffect(() => {
+    gsap.registerPlugin(ScrollTrigger)
+
+    const SECTIONS = [
+      { id: '#hero',     idx: 0 },
+      { id: '#brand',    idx: 1 },
+      { id: '#features', idx: 2 },
+      { id: '#showcase', idx: 3 },
+      { id: '#stats',    idx: 4 },
+      { id: '#cta',      idx: 5 },
+    ]
+
+    const triggers = SECTIONS.map(({ id, idx }) =>
+      ScrollTrigger.create({
+        trigger: id,
+        start: 'top 58%',
+        onEnter:     () => gsap.to(scrollState.current, { section: idx, duration: 1.0, ease: 'power2.inOut', overwrite: true }),
+        onEnterBack: () => gsap.to(scrollState.current, { section: idx, duration: 1.0, ease: 'power2.inOut', overwrite: true }),
+      }),
+    )
+
+    return () => triggers.forEach((t) => t.kill())
+  }, [])
+
   return (
     <>
-      {/* Atmospheric grain */}
+      {/* Film grain — fixed atmospheric texture */}
       <GrainOverlay />
 
-      {/* Custom cursor (desktop only — hidden on touch devices via CSS) */}
+      {/* Custom cursor — desktop only (hidden on touch via CSS) */}
       <Cursor />
 
-      {/* Loading screen — unmounts after animation */}
+      {/* Global particle canvas — fixed viewport overlay, pointer-events none */}
+      <ParticleCanvas scrollState={scrollState} />
+
+      {/* Loading screen — slide-up exit reveals page */}
       {!loaded && (
         <LoadingScreen onComplete={() => setLoaded(true)} />
       )}
@@ -80,7 +118,7 @@ export default function Page() {
       {/* Navigation */}
       <Navigation />
 
-      {/* Main content */}
+      {/* Sections */}
       <main id="main-content">
         <Hero />
         <Brand />
@@ -90,7 +128,6 @@ export default function Page() {
         <CTA />
       </main>
 
-      {/* Footer */}
       <Footer />
     </>
   )

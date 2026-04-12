@@ -18,7 +18,7 @@ const FEATURES = [
     id: '02',
     title: 'Travel & Dining',
     headline: 'Every experience, curated.',
-    description: 'From Michelin-starred reservations to last-minute flights and hotel upgrades — A.U.R.A handles the logistics so you focus on living. Preferences remembered, every time.',
+    description: 'From Michelin-starred reservations to last-minute flights and hotel upgrades — A.U.R.A handles the logistics so you can focus on living. Preferences remembered, every time.',
     tags: ['Flights', 'Hotels', 'Restaurants'],
     accentColor: '#C4A87A',
   },
@@ -26,7 +26,7 @@ const FEATURES = [
     id: '03',
     title: 'Deep Research',
     headline: 'Information distilled to signal.',
-    description: 'Ask anything complex. A.U.R.A synthesises across thousands of sources, validates claims, and delivers a clear, cited brief — whether it\'s market data, medical literature, or legal precedent.',
+    description: 'Ask anything complex. A.U.R.A synthesises across thousands of sources, validates claims, and delivers a clear, cited brief — market data, medical literature, or legal precedent.',
     tags: ['Market Intel', 'Academic', 'Legal'],
     accentColor: '#78C8A0',
   },
@@ -50,167 +50,216 @@ const FEATURES = [
     id: '06',
     title: 'Health & Wellness',
     headline: 'Proactive, not reactive.',
-    description: 'A.U.R.A monitors your health data, schedules appointments, manages prescriptions, and nudges you toward balance — working quietly in the background of a well-lived life.',
+    description: 'A.U.R.A monitors health data, schedules appointments, manages prescriptions, and nudges you toward balance — working quietly in the background of a well-lived life.',
     tags: ['Medical', 'Fitness', 'Sleep'],
     accentColor: '#D4A8FF',
   },
 ]
 
 /**
- * Features section — scroll-pinned horizontal narrative.
- * Each feature card animates in as the user scrolls through the pin window.
+ * Features section — scroll-driven card narrative.
+ *
+ * Architecture: outer wrapper provides scroll distance
+ * (FEATURES.length × 100vh). Inner panel is `position: sticky; top: 0`
+ * — it pins itself without using GSAP pin (avoids conflicts with Lenis).
+ * A ScrollTrigger scrubs `progress` 0→1 over the wrapper's scroll range,
+ * which drives the active-card highlight and the counter.
  */
 export default function Features() {
-  const sectionRef  = useRef<HTMLElement>(null)
-  const trackRef    = useRef<HTMLDivElement>(null)
+  const wrapperRef = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState(0)
-  const reduced     = useReducedMotion()
+  const reduced = useReducedMotion()
 
   useEffect(() => {
-    if (reduced) return
     gsap.registerPlugin(ScrollTrigger)
 
     const ctx = gsap.context(() => {
-      const cards = trackRef.current?.querySelectorAll('.feature-card') ?? []
-
-      // Pin the section and scrub through cards
+      // Single scrubbed trigger over the whole wrapper height
       ScrollTrigger.create({
-        trigger: sectionRef.current,
+        trigger: wrapperRef.current,
         start: 'top top',
-        end: `+=${FEATURES.length * 120}%`,
-        pin: true,
-        scrub: 0.8,
+        end: 'bottom bottom',
+        scrub: 0.6,
         onUpdate(self) {
-          const idx = Math.round(self.progress * (FEATURES.length - 1))
-          setActive(Math.min(idx, FEATURES.length - 1))
+          const idx = Math.min(
+            Math.floor(self.progress * FEATURES.length),
+            FEATURES.length - 1,
+          )
+          setActive(idx)
         },
       })
 
-      // Each card reveal
-      cards.forEach((card, i) => {
+      if (!reduced) {
+        // Stagger-in all cards once section enters
         gsap.fromTo(
-          card,
-          { opacity: 0, y: 40, scale: 0.97 },
+          '.feature-card',
+          { opacity: 0, y: 30 },
           {
-            opacity: 1, y: 0, scale: 1,
-            duration: 0.6,
+            opacity: 1,
+            y: 0,
+            stagger: 0.07,
+            duration: 0.7,
             ease: 'power3.out',
             scrollTrigger: {
-              trigger: sectionRef.current,
-              start: `top+=${i * 100}% top`,
-              end: `top+=${(i + 1) * 100}% top`,
-              toggleActions: 'play reverse play reverse',
-              scrub: false,
+              trigger: wrapperRef.current,
+              start: 'top 75%',
+              toggleActions: 'play none none none',
             },
           },
         )
-      })
-    }, sectionRef)
+
+        // Section header
+        gsap.fromTo(
+          '.features-header',
+          { opacity: 0, y: 20 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 0.7,
+            ease: 'power3.out',
+            scrollTrigger: {
+              trigger: wrapperRef.current,
+              start: 'top 80%',
+              toggleActions: 'play none none none',
+            },
+          },
+        )
+      }
+    })
 
     return () => ctx.revert()
   }, [reduced])
 
   return (
-    <section
-      ref={sectionRef}
+    /**
+     * Outer wrapper: provides the full scroll distance.
+     * Height = FEATURES.length × 100vh so there's enough runway
+     * for all features to be highlighted one by one.
+     */
+    <div
+      ref={wrapperRef}
       id="features"
-      className="relative bg-aura-black overflow-hidden"
+      style={{ height: `${FEATURES.length * 100}vh` }}
       aria-label="A.U.R.A capabilities"
-      style={{ height: '100vh' }}
     >
-      <div className="h-full mx-auto max-w-[1400px] px-6 lg:px-12 flex flex-col justify-center">
-        {/* Header */}
-        <div className="flex items-end justify-between mb-12 lg:mb-16">
-          <div>
-            <p className="font-body text-label text-aura-muted uppercase tracking-[0.3em] mb-3">
-              Capabilities
-            </p>
-            <h2
-              className="font-display font-bold text-aura-white"
-              style={{ fontSize: 'clamp(2rem,3.5vw,4rem)', letterSpacing: '-0.025em', lineHeight: 1.1 }}
-            >
-              Everything You Need.<br />Nothing You Don't.
-            </h2>
+      {/* Sticky inner panel — stays in view for the whole scroll range */}
+      <div
+        className="sticky top-0 h-screen bg-aura-black overflow-hidden flex flex-col justify-center"
+      >
+        <div className="mx-auto w-full max-w-[1400px] px-6 lg:px-12">
+
+          {/* ── Header */}
+          <div className="features-header flex items-end justify-between mb-10 lg:mb-12">
+            <div>
+              <p className="font-body text-label text-aura-muted uppercase tracking-[0.3em] mb-3">
+                Capabilities
+              </p>
+              <h2
+                className="font-display font-bold text-aura-white"
+                style={{ fontSize: 'clamp(1.8rem,3vw,3.6rem)', letterSpacing: '-0.025em', lineHeight: 1.1 }}
+              >
+                Everything You Need.<br />
+                <span
+                  style={{
+                    background: 'linear-gradient(120deg, #C4C8D8 0%, #F8F8F8 60%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  Nothing You Don&apos;t.
+                </span>
+              </h2>
+            </div>
+
+            {/* Dot progress */}
+            <div className="hidden lg:flex items-center gap-2.5" aria-hidden="true">
+              {FEATURES.map((_, i) => (
+                <div
+                  key={i}
+                  className="rounded-full transition-all duration-500 ease-expo-out"
+                  style={{
+                    width:      i === active ? 28 : 8,
+                    height:     8,
+                    borderRadius: 4,
+                    background: i === active
+                      ? FEATURES[active].accentColor
+                      : 'rgba(255,255,255,0.15)',
+                  }}
+                />
+              ))}
+            </div>
           </div>
 
-          {/* Progress indicator */}
-          <div className="hidden lg:flex items-center gap-3">
-            {FEATURES.map((_, i) => (
-              <div
-                key={i}
-                className="h-px transition-all duration-500 ease-expo-out"
+          {/* ── Cards grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 lg:gap-4">
+            {FEATURES.map((f, i) => (
+              <article
+                key={f.id}
+                className="feature-card glass p-6 lg:p-7 transition-all duration-500"
                 style={{
-                  width: i === active ? 32 : 12,
-                  background: i === active ? '#F8F8F8' : 'rgba(255,255,255,0.2)',
+                  borderLeft:  `2px solid ${i === active ? f.accentColor : 'transparent'}`,
+                  opacity:     i === active ? 1 : reduced ? 1 : 0.38,
+                  transform:   i === active ? 'translateY(-2px)' : 'none',
+                  transition:  'opacity 0.4s ease, border-color 0.4s ease, transform 0.4s ease',
                 }}
-              />
+                aria-current={i === active ? 'step' : undefined}
+              >
+                {/* Card header */}
+                <div className="flex items-center justify-between mb-5">
+                  <span
+                    className="font-display text-[0.62rem] font-bold tracking-[0.28em] uppercase"
+                    style={{ color: f.accentColor }}
+                  >
+                    {f.id} — {f.title}
+                  </span>
+                  <span
+                    className="w-1.5 h-1.5 rounded-full flex-shrink-0 transition-opacity duration-400"
+                    style={{ background: f.accentColor, opacity: i === active ? 1 : 0.25 }}
+                    aria-hidden="true"
+                  />
+                </div>
+
+                <h3
+                  className="font-display font-semibold text-aura-white mb-2.5 leading-snug"
+                  style={{ fontSize: '1.025rem', letterSpacing: '-0.01em' }}
+                >
+                  {f.headline}
+                </h3>
+                <p className="font-body text-[0.85rem] text-aura-silver leading-relaxed mb-5">
+                  {f.description}
+                </p>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {f.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="font-body text-[0.58rem] uppercase tracking-[0.14em] px-2 py-1 border border-[rgba(255,255,255,0.07)] text-aura-muted"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </article>
             ))}
           </div>
-        </div>
 
-        {/* Cards grid */}
-        <div
-          ref={trackRef}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5"
-        >
-          {FEATURES.map((f, i) => (
-            <article
-              key={f.id}
-              className={`feature-card glass rounded-none p-7 lg:p-8 transition-all duration-500 border-l-0 ${
-                i === active ? 'opacity-100' : 'opacity-40'
-              }`}
-              style={{
-                borderLeft: i === active ? `2px solid ${f.accentColor}` : '2px solid transparent',
-                transition: 'opacity 0.4s ease, border-color 0.4s ease',
-              }}
-              aria-current={i === active ? 'true' : undefined}
+          {/* ── Footer row */}
+          <div className="mt-8 flex items-center justify-between">
+            <p className="font-body text-[0.62rem] text-aura-muted tracking-[0.22em] uppercase">
+              Scroll to explore all capabilities
+            </p>
+            <span
+              className="font-display font-bold text-aura-muted text-[0.68rem] tracking-[0.3em]"
+              aria-live="polite"
+              aria-label={`Capability ${active + 1} of ${FEATURES.length}`}
             >
-              <div className="flex items-start justify-between mb-6">
-                <span
-                  className="font-display text-[0.65rem] font-bold tracking-[0.25em] uppercase"
-                  style={{ color: f.accentColor }}
-                >
-                  {f.id}
-                </span>
-                {/* Accent dot */}
-                <div
-                  className="w-2 h-2 rounded-full"
-                  style={{ background: f.accentColor, opacity: i === active ? 1 : 0.3 }}
-                  aria-hidden="true"
-                />
-              </div>
+              {String(active + 1).padStart(2, '0')} / {String(FEATURES.length).padStart(2, '0')}
+            </span>
+          </div>
 
-              <h3 className="font-display font-semibold text-aura-white mb-2" style={{ fontSize: '1.0625rem', letterSpacing: '-0.01em' }}>
-                {f.headline}
-              </h3>
-              <p className="font-body text-sm text-aura-silver leading-relaxed mb-6">
-                {f.description}
-              </p>
-
-              <div className="flex flex-wrap gap-2">
-                {f.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="font-body text-[0.6rem] uppercase tracking-[0.15em] px-2.5 py-1 border border-[rgba(255,255,255,0.08)] text-aura-muted"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </div>
-            </article>
-          ))}
-        </div>
-
-        {/* Section label */}
-        <div className="mt-10 flex items-center justify-between">
-          <span className="font-body text-[0.65rem] text-aura-muted tracking-[0.2em] uppercase">
-            Scroll to explore
-          </span>
-          <span className="font-display font-bold text-aura-muted text-[0.7rem] tracking-[0.3em]">
-            {String(active + 1).padStart(2, '0')} / {String(FEATURES.length).padStart(2, '0')}
-          </span>
         </div>
       </div>
-    </section>
+    </div>
   )
 }

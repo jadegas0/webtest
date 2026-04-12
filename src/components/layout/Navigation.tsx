@@ -6,9 +6,9 @@ import ScrollTrigger from 'gsap/ScrollTrigger'
 
 const NAV_LINKS = [
   { label: 'Capabilities', href: '#features' },
-  { label: 'Experience',   href: '#showcase' },
-  { label: 'Vision',       href: '#brand'    },
-  { label: 'About',        href: '#stats'    },
+  { label: 'Experiences',  href: '#showcase' },
+  { label: 'Manifesto',    href: '#brand'    },
+  { label: 'The Numbers',  href: '#stats'    },
 ]
 
 /**

@@ -177,7 +177,7 @@ export default function CTA() {
           className="cta-sub font-body text-[1.0625rem] text-aura-silver leading-relaxed max-w-[540px] mx-auto mb-14"
           style={{ opacity: reduced ? 1 : 0 }}
         >
-          Join the waitlist. A.U.R.A is currently in private beta for select households. Be among the first to experience a truly intelligent home.
+          A.U.R.A is in private beta for select households, enterprises, and early adopters. Join the waitlist and be among the first to live with truly ambient intelligence.
         </p>
 
         {/* Form / Success */}
@@ -241,27 +241,46 @@ export default function CTA() {
           </p>
         )}
 
-        {/* Investors / Enterprise note */}
-        <div className="mt-16 pt-10 border-t border-[rgba(255,255,255,0.06)] grid grid-cols-1 sm:grid-cols-2 gap-6 text-left max-w-[540px] mx-auto">
+        {/* Contact grid */}
+        <div className="mt-16 pt-10 border-t border-[rgba(255,255,255,0.06)] grid grid-cols-1 sm:grid-cols-3 gap-6 text-left max-w-[680px] mx-auto">
           <div>
             <p className="font-body text-label text-aura-muted uppercase tracking-[0.2em] mb-2">Investors</p>
             <a
               href="mailto:invest@aura.ai"
-              className="font-body text-sm text-aura-silver hover:text-aura-white transition-colors"
+              className="font-body text-sm text-aura-silver hover:text-aura-white transition-colors duration-300"
               style={{ cursor: 'none' }}
             >
               invest@aura.ai
             </a>
+            <p className="font-body text-[0.68rem] text-aura-muted mt-1">
+              Deck available on request
+            </p>
           </div>
           <div>
             <p className="font-body text-label text-aura-muted uppercase tracking-[0.2em] mb-2">Enterprise</p>
             <a
               href="mailto:enterprise@aura.ai"
-              className="font-body text-sm text-aura-silver hover:text-aura-white transition-colors"
+              className="font-body text-sm text-aura-silver hover:text-aura-white transition-colors duration-300"
               style={{ cursor: 'none' }}
             >
               enterprise@aura.ai
             </a>
+            <p className="font-body text-[0.68rem] text-aura-muted mt-1">
+              Custom deployment &amp; SLA
+            </p>
+          </div>
+          <div>
+            <p className="font-body text-label text-aura-muted uppercase tracking-[0.2em] mb-2">Press</p>
+            <a
+              href="mailto:press@aura.ai"
+              className="font-body text-sm text-aura-silver hover:text-aura-white transition-colors duration-300"
+              style={{ cursor: 'none' }}
+            >
+              press@aura.ai
+            </a>
+            <p className="font-body text-[0.68rem] text-aura-muted mt-1">
+              Media kit &amp; spokesperson
+            </p>
           </div>
         </div>
       </div>
