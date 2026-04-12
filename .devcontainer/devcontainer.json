@@ -1,0 +1,40 @@
+{
+  "name": "A.U.R.A Website",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:20",
+
+  // Forward port 3000 so the dev server is accessible in the browser
+  "forwardPorts": [3000],
+  "portsAttributes": {
+    "3000": {
+      "label": "Next.js Dev Server",
+      "onAutoForward": "openPreview"
+    }
+  },
+
+  // Install dependencies automatically when the Codespace is created
+  "postCreateCommand": "npm install",
+
+  // Start the dev server automatically when the Codespace opens
+  "postStartCommand": "npm run dev",
+
+  // VS Code extensions pre-installed in the Codespace
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bradlc.vscode-tailwindcss",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-next",
+        "styled-components.vscode-styled-components"
+      ],
+      "settings": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
+        "editor.tabSize": 2,
+        "tailwindCSS.experimental.classRegex": [
+          ["cn\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]"]
+        ]
+      }
+    }
+  }
+}
